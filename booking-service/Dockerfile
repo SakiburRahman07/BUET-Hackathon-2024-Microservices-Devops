@@ -10,5 +10,5 @@ COPY target/*.jar app.jar
 # Expose the port that your application runs on
 EXPOSE 8082
 
-# Run the application
+# Run the applicationd
 ENTRYPOINT ["java", "-jar", "app.jar"]
