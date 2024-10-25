@@ -1,0 +1,135 @@
+version: '3.8'
+services:
+  # PostgreSQL for Booking microservice
+  db_booking:
+    image: postgres:14-alpine
+    container_name: postgres-db-booking
+    environment:
+      POSTGRES_DB: booking
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 2007007
+    ports:
+      - "5433:5432"  # Expose a different host port for each database
+    volumes:
+      - db_booking_data:/var/lib/postgresql/data
+
+  # # PostgreSQL for OTP microservice
+  # db_otp:
+  #   image: postgres:14-alpine
+  #   container_name: postgres-db-otp
+  #   environment:
+  #     POSTGRES_DB: otpdb
+  #     POSTGRES_USER: otpuser
+  #     POSTGRES_PASSWORD: otppass
+  #   ports:
+  #     - "5434:5432"
+  #   volumes:
+  #     - db_otp_data:/var/lib/postgresql/data
+
+  # PostgreSQL for Question microservice
+  db_question:
+    image: postgres:14-alpine
+    container_name: postgres-db-question
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 2007007
+    ports:
+      - "5435:5432"
+    volumes:
+      - db_question_data:/var/lib/postgresql/data
+
+  # PostgreSQL for Train microservice
+  db_train:
+    image: postgres:14-alpine
+    container_name: postgres-db-train
+    environment:
+      POSTGRES_DB: train
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 2007007
+    ports:
+      - "5436:5432"
+    volumes:
+      - db_train_data:/var/lib/postgresql/data
+
+  # Booking microservice
+  booking-service:
+    build: ./booking-service
+    container_name: booking_service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db_booking:5432/booking
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 2007007
+    ports:
+      - "8091:8082"
+    depends_on:
+      - db_booking
+
+  # OTP microservice
+  otp-service:
+    build: ./otp-service
+    container_name: otp_service
+    # environment:
+    #   SPRING_DATASOURCE_URL: jdbc:postgresql://db_otp:5432/otpdb
+    #   SPRING_DATASOURCE_USERNAME: otpuser
+    #   SPRING_DATASOURCE_PASSWORD: otppass
+    ports:
+      - "8092:8084"
+    # depends_on:
+    #   - db_otp
+
+  # Question microservice
+  question-service:
+    build: ./question-service
+    container_name: question_service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db_question:5432/auth
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 2007007
+    ports:
+      - "8093:8080"
+    depends_on:
+      - db_question
+
+  # Train microservice
+  train-service:
+    build: ./train-service
+    container_name: train_service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db_train:5432/train
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 2007007
+    ports:
+      - "8094:8081"
+    depends_on:
+      - db_train
+
+  # Service Registry (Eureka or similar)
+  service-registry:
+    build: ./service-registry
+    container_name: service_registry
+    ports:
+      - "8761:8761"
+    depends_on:
+      - db_booking
+      - db_otp
+      - db_question
+      - db_train
+
+  # React Frontend
+  react-frontend:
+    build: ./frontend  # Ensure that Dockerfile exists in the react-frontend directory
+    container_name: react_frontend
+    ports:
+      - "5177:80"  # React will be served on port 3000
+    depends_on:
+      - booking-service
+      - otp-service
+      - question-service
+      - train-service
+
+volumes:
+  db_booking_data:
+  db_otp_data:
+  db_question_data:
+  db_train_data:
